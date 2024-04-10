@@ -2,6 +2,14 @@ import requests
 import os
 import json
 import pandas as pd
+from sqlalchemy import create_engine
+import pymysql 
+
+user_name = "dev1"
+pw = os.getenv("local_db_pw")
+
+conn = create_engine("mysql+pymysql://{}:{}@localhost/database1".format(user_name, pw))
+
 
 
 pd.set_option('display.max_columns', 500)
@@ -16,9 +24,8 @@ def get_ev_chargers(_api_key, ret_amount):
     df = df[['station_name',"date_last_confirmed", "latitude", "longitude"]]
     return df
 
-ev_chargers = get_ev_chargers(api_key, 1)
+ev_chargers = get_ev_chargers(api_key, 100)
 
 
-ev_chargers.to_sql() # use SQLALCHEMY
-ev_chargers.to_csv() # WRITE TO CSV
-ev_chargers.to_clipboard() 
+# FOR SQL SERVER MANAGEMENT STUDIO - 
+ev_chargers.to_sql("EV_Charger", con=conn,if_exists="replace")
