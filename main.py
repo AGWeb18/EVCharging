@@ -4,17 +4,7 @@ import json
 import pandas as pd
 from sqlalchemy import create_engine
 import pymysql 
-
-user_name = "dev1"
-pw = os.getenv("local_db_pw")
-
-conn = create_engine("mysql+pymysql://{}:{}@localhost/database1".format(user_name, pw))
-
-
-
-pd.set_option('display.max_columns', 500)
-
-api_key = os.getenv("NREL_API_KEY")
+from supabase import create_client, Client
 
 def get_ev_chargers(_api_key, ret_amount):
     req_url = "https://developer.nrel.gov/api/alt-fuel-stations/v1.json?api_key={}&status=E&fuel_type=ELEC&ev_network=Tesla&limit={}".format(_api_key, ret_amount)
@@ -22,10 +12,21 @@ def get_ev_chargers(_api_key, ret_amount):
     response = json.loads(response.content)
     df = pd.DataFrame(response['fuel_stations'])
     df = df[['station_name',"date_last_confirmed", "latitude", "longitude"]]
+    
     return df
+
+
+url = "https://ocjstgtyfmhoyljgqiyh.supabase.co"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9janN0Z3R5Zm1ob3lsamdxaXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI3MDY4OTUsImV4cCI6MjAyODI4Mjg5NX0.232HXiB_S2y8hKjZYH-ogk6u2g8rVmdFZCgQk23IWnM"
+supabase: Client = create_client(url, key)
+
+api_key = os.getenv("NREL_API_KEY")
+
 
 ev_chargers = get_ev_chargers(api_key, 100)
 
+for i, val in ev_chargers.iterrows():
+    
+    val = val.to_dict()
+    data, count = supabase.table('DIM_CHARGERS_T').insert(val).execute()
 
-# FOR SQL SERVER MANAGEMENT STUDIO - 
-ev_chargers.to_sql("EV_Charger", con=conn,if_exists="replace")
